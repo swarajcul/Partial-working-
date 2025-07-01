@@ -1,7 +1,7 @@
 // AWS Configuration for Esports Platform
 export const AWS_CONFIG = {
   // AWS Region
-  region: process.env.AWS_REGION || "us-east-1",
+  region: process.env.AWS_REGION || "ap-south-1",
 
   // Cognito Configuration
   cognito: {
@@ -23,7 +23,7 @@ export const AWS_CONFIG = {
   // S3 Configuration
   s3: {
     bucket: process.env.AWS_S3_BUCKET || "esports-platform-assets",
-    region: process.env.AWS_S3_REGION || "us-east-1",
+    region: process.env.AWS_S3_REGION || "ap-south-1",
   },
 
   // API Gateway

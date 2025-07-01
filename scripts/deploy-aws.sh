@@ -5,8 +5,10 @@ set -e
 
 # Configuration
 ENVIRONMENT=${1:-dev}
-REGION=${2:-us-east-1}
+REGION=${2:-ap-south-1}
 STACK_NAME="esports-platform-${ENVIRONMENT}"
+
+echo "You can override the default region by passing it as an argument: ./scripts/deploy-aws.sh [environment] [region]"
 
 echo "🚀 Deploying Esports Platform to AWS..."
 echo "Environment: ${ENVIRONMENT}"
@@ -102,7 +104,7 @@ echo "S3 Bucket: ${S3_BUCKET}"
 echo ""
 echo "🔧 Next Steps:"
 echo "1. Rename .env.${ENVIRONMENT} to .env.local: mv .env.${ENVIRONMENT} .env.local"
-echo "2. Update your domain in the .env.local file"
+echo "2. Update NEXTAUTH_URL in the .env.local file with your domain"
 echo "3. Run database migrations: npm run db:migrate"
 echo "4. Create a user in your new Cognito User Pool"
 echo "5. Run the app locally: npm run dev"

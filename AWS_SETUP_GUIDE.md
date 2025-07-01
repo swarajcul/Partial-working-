@@ -23,6 +23,8 @@ Execute the following command in your project's root directory:
 ./scripts/deploy-aws.sh
 \`\`\`
 
+This script defaults to the `ap-south-1` region. If you need to deploy to a different region, you can specify it as the second argument: `./scripts/deploy-aws.sh dev us-west-2`
+
 The script will:
 1.  Prompt you for a secure database password.
 2.  Deploy the CloudFormation stack defined in `aws-infrastructure.yml`. This will create your Cognito User Pool, RDS database, S3 bucket, and all necessary networking and permissions. This process can take 10-15 minutes.
@@ -92,7 +94,7 @@ Manually create a `.env.local` file and populate it with the credentials and end
 - Enable Multi-Factor Authentication (MFA) on your root AWS account.
 \`\`\`
 
-```shellscript file="scripts/deploy-aws.sh"
+\`\`\`shellscript file="scripts/deploy-aws.sh"
 #!/bin/bash
 
 # AWS Deployment Script for Esports Platform
@@ -163,28 +165,28 @@ S3_BUCKET=$(echo $OUTPUTS | jq -r '.[] | select(.OutputKey=="S3BucketName") | .O
 # Create environment file
 echo "📝 Creating environment configuration file: .env.${ENVIRONMENT}"
 cat > .env.${ENVIRONMENT} &lt;&lt; EOF
-# AWS Configuration for ${ENVIRONMENT} environment
-AWS_REGION=${REGION}
+# AWS Configuration
+AWS_REGION=ap-south-1
 
 # Cognito Configuration
-AWS_COGNITO_USER_POOL_ID=${USER_POOL_ID}
-AWS_COGNITO_USER_POOL_CLIENT_ID=${USER_POOL_CLIENT_ID}
-AWS_COGNITO_IDENTITY_POOL_ID=${IDENTITY_POOL_ID}
+AWS_COGNITO_USER_POOL_ID=ap-south-1_xxxxxxxxx
+AWS_COGNITO_USER_POOL_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
+AWS_COGNITO_IDENTITY_POOL_ID=ap-south-1:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+AWS_COGNITO_DOMAIN=https://your-domain.auth.ap-south-1.amazoncognito.com
 
 # RDS Configuration
-AWS_RDS_HOST=${DATABASE_ENDPOINT}
-AWS_RDS_PORT=${DATABASE_PORT}
+AWS_RDS_HOST=esports-platform-db.xxxxxxxxxx.ap-south-1.rds.amazonaws.com
+AWS_RDS_PORT=5432
 AWS_RDS_DATABASE=esports_platform
-AWS_RDS_USERNAME=esports_admin
-AWS_RDS_PASSWORD=${DB_PASSWORD}
+AWS_RDS_USERNAME=postgres
+AWS_RDS_PASSWORD=your-strong-password
 
 # S3 Configuration
-AWS_S3_BUCKET=${S3_BUCKET}
-AWS_S3_REGION=${REGION}
+AWS_S3_BUCKET=esports-platform-assets-xxxxxxxxx
+AWS_S3_REGION=ap-south-1
 
-# Next.js Configuration
-NEXTAUTH_URL=https://your-domain.com
-NEXTAUTH_SECRET=$(openssl rand -base64 32)
+# API Gateway (optional)
+AWS_API_GATEWAY_URL=https://xxxxxxxxxx.execute-api.ap-south-1.amazonaws.com/prod
 EOF
 
 echo "✅ AWS infrastructure deployed successfully!"
