@@ -69,7 +69,7 @@ S3_BUCKET=$(echo $OUTPUTS | jq -r '.[] | select(.OutputKey=="S3BucketName") | .O
 
 # Create environment file
 echo "📝 Creating environment configuration file: .env.${ENVIRONMENT}"
-cat > .env.${ENVIRONMENT} &lt;&lt; EOF
+cat > .env.${ENVIRONMENT} << EOF
 # AWS Configuration for ${ENVIRONMENT} environment
 AWS_REGION=${REGION}
 
