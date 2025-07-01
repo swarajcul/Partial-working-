@@ -13,10 +13,11 @@ async function runMigrations() {
       VALUES 
         ('Rebellion', 'Main competitive team'),
         ('Academy', 'Training and development team')
-      ON CONFLICT DO NOTHING
+      ON CONFLICT (name) DO NOTHING
     `)
 
     // Insert default admin user (you'll need to create this in Cognito first)
+    // IMPORTANT: Replace 'admin-cognito-id' with the actual Sub ID from your Cognito user
     await db.query(`
       INSERT INTO users (cognito_id, email, name, role) 
       VALUES 
