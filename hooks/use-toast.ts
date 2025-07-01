@@ -1,23 +1,17 @@
 "use client"
 
-// Inspired by react-hot-toast library
 import * as React from "react"
 
-interface Toast {
-  id: string
-  title: string
-  description?: string
-  variant?: "default" | "destructive"
-}
-
-let toastCount = 0
+import type { ToastActionElement, ToastProps } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
 
-type ToasterToast = Toast & {
-  open: boolean
-  onOpenChange?: (open: boolean) => void
+type ToasterToast = ToastProps & {
+  id: string
+  title?: React.ReactNode
+  description?: React.ReactNode
+  action?: ToastActionElement
 }
 
 const actionTypes = {
@@ -27,9 +21,11 @@ const actionTypes = {
   REMOVE_TOAST: "REMOVE_TOAST",
 } as const
 
+let count = 0
+
 function genId() {
-  toastCount = (toastCount + 1) % Number.MAX_SAFE_INTEGER
-  return `toast-${toastCount}`
+  count = (count + 1) % Number.MAX_SAFE_INTEGER
+  return count.toString()
 }
 
 type ActionType = typeof actionTypes
@@ -138,6 +134,37 @@ function dispatch(action: Action) {
   })
 }
 
+type Toast = Omit<ToasterToast, "id">
+
+function toast({ ...props }: Toast) {
+  const id = genId()
+
+  const update = (props: ToasterToast) =>
+    dispatch({
+      type: "UPDATE_TOAST",
+      toast: { ...props, id },
+    })
+  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
+
+  dispatch({
+    type: "ADD_TOAST",
+    toast: {
+      ...props,
+      id,
+      open: true,
+      onOpenChange: (open) => {
+        if (!open) dismiss()
+      },
+    },
+  })
+
+  return {
+    id: id,
+    dismiss,
+    update,
+  }
+}
+
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
@@ -151,38 +178,11 @@ function useToast() {
     }
   }, [state])
 
-  const toast = React.useCallback(({ title, description, variant = "default" }: Omit<Toast, "id">) => {
-    const id = genId()
-    const newToast: ToasterToast = { id, title, description, variant, open: true }
-
-    dispatch({
-      type: "ADD_TOAST",
-      toast: newToast,
-    })
-
-    // Auto-remove toast after 5 seconds
-    setTimeout(() => {
-      dispatch({ type: "REMOVE_TOAST", toastId: id })
-    }, 5000)
-
-    return { id }
-  }, [])
-
-  const dismiss = React.useCallback((id: string) => {
-    dispatch({ type: "DISMISS_TOAST", toastId: id })
-  }, [])
-
   return {
     ...state,
     toast,
-    dismiss,
+    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
   }
 }
 
-// Simple toast function for direct use
-export const toastFunction = ({ title, description, variant = "default" }: Omit<Toast, "id">) => {
-  // This is a simplified version - in a real app you'd use a toast provider
-  console.log(`Toast: ${title}${description ? ` - ${description}` : ""}`)
-}
-
-export { useToast }
+export { useToast, toast }

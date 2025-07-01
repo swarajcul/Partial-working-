@@ -1,4 +1,4 @@
-export type UserRole = "admin" | "coach" | "analyst" | "player"
+export type UserRole = "admin" | "manager" | "coach" | "analyst" | "player"
 
 export interface RolePermissions {
   canViewAllTeams: boolean
@@ -17,6 +17,11 @@ export interface RolePermissions {
   canAccessAdmin: boolean
   canViewOwnDataOnly: boolean
   canExportData: boolean
+  canViewProfile: boolean
+  canEditProfile: boolean
+  canViewKPIs: boolean
+  canEditKPIs: boolean
+  canManageStaff: boolean
 }
 
 export const rolePermissions: Record<UserRole, RolePermissions> = {
@@ -37,9 +42,37 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     canAccessAdmin: true,
     canViewOwnDataOnly: false,
     canExportData: true,
+    canViewProfile: true,
+    canEditProfile: true,
+    canViewKPIs: true,
+    canEditKPIs: true,
+    canManageStaff: true,
+  },
+  manager: {
+    canViewAllTeams: true,
+    canEditTeams: true,
+    canManageUsers: false,
+    canViewFinance: true,
+    canEditFinance: false,
+    canViewReports: true,
+    canEditReports: true,
+    canViewPerformance: true,
+    canEditPerformance: true,
+    canViewAttendance: true,
+    canEditAttendance: true,
+    canScheduleMatches: true,
+    canViewAnalytics: true,
+    canAccessAdmin: false,
+    canViewOwnDataOnly: false,
+    canExportData: true,
+    canViewProfile: true,
+    canEditProfile: true,
+    canViewKPIs: true,
+    canEditKPIs: true,
+    canManageStaff: true,
   },
   coach: {
-    canViewAllTeams: false, // Only assigned teams
+    canViewAllTeams: false,
     canEditTeams: true,
     canManageUsers: false,
     canViewFinance: false,
@@ -55,6 +88,11 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     canAccessAdmin: false,
     canViewOwnDataOnly: false,
     canExportData: true,
+    canViewProfile: true,
+    canEditProfile: true,
+    canViewKPIs: true,
+    canEditKPIs: false,
+    canManageStaff: false,
   },
   analyst: {
     canViewAllTeams: true,
@@ -73,6 +111,11 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     canAccessAdmin: false,
     canViewOwnDataOnly: false,
     canExportData: true,
+    canViewProfile: true,
+    canEditProfile: true,
+    canViewKPIs: true,
+    canEditKPIs: false,
+    canManageStaff: false,
   },
   player: {
     canViewAllTeams: false,
@@ -83,29 +126,44 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     canViewReports: false,
     canEditReports: false,
     canViewPerformance: true,
-    canEditPerformance: false,
+    canEditPerformance: true,
     canViewAttendance: true,
-    canEditAttendance: false,
+    canEditAttendance: true,
     canScheduleMatches: false,
     canViewAnalytics: true,
     canAccessAdmin: false,
     canViewOwnDataOnly: true,
     canExportData: false,
+    canViewProfile: true,
+    canEditProfile: true,
+    canViewKPIs: false,
+    canEditKPIs: false,
+    canManageStaff: false,
   },
 }
 
 export const roleLabels: Record<UserRole, string> = {
   admin: "👑 Admin",
+  manager: "🎯 Manager",
   coach: "🧑‍🏫 Coach",
-  analyst: "🧑‍💻 Analyst",
+  analyst: "📊 Analyst",
   player: "🧍 Player",
 }
 
 export const roleDescriptions: Record<UserRole, string> = {
   admin: "Full system access - manage everything",
+  manager: "Team oversight - manage coaches and analysts",
   coach: "Team management - assigned teams only",
-  analyst: "Read-only analytics and reporting access",
+  analyst: "Advanced analytics and reporting access",
   player: "Personal data and team information only",
+}
+
+export const roleHierarchy: Record<UserRole, number> = {
+  admin: 5,
+  manager: 4,
+  coach: 3,
+  analyst: 3,
+  player: 1,
 }
 
 export function hasPermission(role: UserRole, permission: keyof RolePermissions): boolean {
@@ -121,6 +179,12 @@ export function getVisibleMenuItems(role: UserRole) {
       url: "/dashboard",
       icon: "Home",
       visible: true,
+    },
+    {
+      title: "Profile",
+      url: "/dashboard/profile",
+      icon: "User",
+      visible: permissions.canViewProfile,
     },
     {
       title: "Team Info",
@@ -163,6 +227,12 @@ export function getVisibleMenuItems(role: UserRole) {
       url: "/dashboard/reports",
       icon: "FileText",
       visible: permissions.canViewReports,
+    },
+    {
+      title: "KPI Dashboard",
+      url: "/dashboard/kpi",
+      icon: "TrendingUp",
+      visible: permissions.canViewKPIs,
     },
     {
       title: "Finance",

@@ -2,72 +2,83 @@
 
 import type React from "react"
 
-import { useState, useCallback } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { SidebarTrigger } from "@/components/ui/sidebar"
-import { Upload, Save, User, Shield, Settings, Bell, Edit, Lock } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useAuth } from "@/components/auth/auth-provider"
 import { useToast } from "@/hooks/use-toast"
+import { Lock, Upload, Save, Trophy, Monitor, Headphones, Mouse, Keyboard } from "lucide-react"
 
-// Mock player profile data
-const mockPlayerProfile = {
-  id: "player-1",
-  ign: "ShadowStrike",
-  realName: "Alex Johnson",
-  playerId: "BGM_SS_001",
-  assignedTeam: "Rebellion",
-  role: "IGL",
-  tier: "God Tier",
-  profilePicture: "/placeholder.svg?height=120&width=120",
-  status: "Active",
-  deviceInfo: {
-    device: "iPhone 14 Pro",
-    processor: "A16 Bionic",
-    ram: "6GB",
-    storage: "256GB",
-    internet: "5G/WiFi",
-    sensitivity: "245 ADS, 180 Camera",
-    controls: "6 Finger Claw",
-    hud: "Custom Layout v2.1",
-  },
-  joinDate: "2024-01-15",
-  lastActive: "2024-12-24",
+interface PlayerProfile {
+  id: string
+  ign: string
+  realName: string
+  playerId: string
+  team: string
+  role: string
+  tier: string
+  status: string
+  profilePicture: string
+  device: {
+    monitor: string
+    headset: string
+    mouse: string
+    keyboard: string
+    mousepad: string
+    dpi: string
+    sensitivity: string
+  }
+  stats: {
+    totalMatches: number
+    winRate: number
+    avgKills: number
+    avgPlacement: number
+  }
 }
 
 export function PlayerProfilePage() {
+  const { user } = useAuth()
   const { toast } = useToast()
+
   const [isEditing, setIsEditing] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [profileData, setProfileData] = useState(mockPlayerProfile)
+  const [isUploading, setIsUploading] = useState(false)
 
-  const handleInputChange = useCallback((field: string, value: string) => {
-    setProfileData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
-  }, [])
+  // Mock player data - in real app, this would come from API
+  const [profile, setProfile] = useState<PlayerProfile>({
+    id: user?.id || "1",
+    ign: "RaptorPlayer",
+    realName: user?.name || "John Doe",
+    playerId: "RP001",
+    team: user?.team || "Raptors",
+    role: "Assaulter",
+    tier: "Tier 1",
+    status: "Active",
+    profilePicture: "/placeholder.svg?height=120&width=120",
+    device: {
+      monitor: "ASUS ROG Swift PG259QN",
+      headset: "SteelSeries Arctis Pro",
+      mouse: "Logitech G Pro X Superlight",
+      keyboard: "Corsair K65 RGB Mini",
+      mousepad: "SteelSeries QcK Heavy",
+      dpi: "800",
+      sensitivity: "0.35",
+    },
+    stats: {
+      totalMatches: 156,
+      winRate: 68.5,
+      avgKills: 8.2,
+      avgPlacement: 3.4,
+    },
+  })
 
-  const handleDeviceInfoChange = useCallback((field: string, value: string) => {
-    setProfileData((prev) => ({
-      ...prev,
-      deviceInfo: {
-        ...prev.deviceInfo,
-        [field]: value,
-      },
-    }))
-  }, [])
-
-  const handleSave = useCallback(async () => {
-    setIsLoading(true)
+  const handleSave = async () => {
     try {
-      // Simulate save delay
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
       toast({
         title: "Profile Updated",
@@ -76,63 +87,58 @@ export function PlayerProfilePage() {
       setIsEditing(false)
     } catch (error) {
       toast({
-        title: "Update Failed",
+        title: "Error",
         description: "Failed to update profile. Please try again.",
         variant: "destructive",
       })
-    } finally {
-      setIsLoading(false)
     }
-  }, [toast])
+  }
 
-  const handleProfilePictureUpload = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0]
-      if (!file) return
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
 
-      if (file.size > 5 * 1024 * 1024) {
-        toast({
-          title: "File Too Large",
-          description: "Profile picture must be less than 5MB.",
-          variant: "destructive",
-        })
-        return
-      }
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please select an image smaller than 5MB.",
+        variant: "destructive",
+      })
+      return
+    }
 
-      if (!file.type.startsWith("image/")) {
-        toast({
-          title: "Invalid File Type",
-          description: "Please upload an image file.",
-          variant: "destructive",
-        })
-        return
-      }
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please select a valid image file.",
+        variant: "destructive",
+      })
+      return
+    }
 
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const result = e.target?.result as string
-        setProfileData((prev) => ({
-          ...prev,
-          profilePicture: result,
-        }))
-      }
-      reader.readAsDataURL(file)
-    },
-    [toast],
-  )
+    setIsUploading(true)
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Active":
-        return "bg-green-600 text-white"
-      case "Benched":
-        return "bg-yellow-600 text-white"
-      case "On Leave":
-        return "bg-blue-600 text-white"
-      case "Trial":
-        return "bg-purple-600 text-white"
-      default:
-        return "bg-gray-600 text-white"
+    try {
+      // Simulate upload
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+
+      const imageUrl = URL.createObjectURL(file)
+      setProfile((prev) => ({ ...prev, profilePicture: imageUrl }))
+
+      toast({
+        title: "Image Uploaded",
+        description: "Profile picture updated successfully.",
+      })
+    } catch (error) {
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -141,394 +147,324 @@ export function PlayerProfilePage() {
       case "God Tier":
         return "bg-gradient-to-r from-yellow-400 to-orange-500 text-white"
       case "Tier 1":
-        return "bg-red-600 text-white"
+        return "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
       case "Tier 2":
-        return "bg-orange-600 text-white"
+        return "bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
       case "Tier 3":
-        return "bg-blue-600 text-white"
+        return "bg-gradient-to-r from-green-500 to-emerald-500 text-white"
       case "Tier 4":
-        return "bg-gray-600 text-white"
+        return "bg-gradient-to-r from-gray-500 to-slate-500 text-white"
       default:
-        return "bg-gray-600 text-white"
+        return "bg-gray-200 text-gray-800"
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Active":
+        return "bg-green-100 text-green-800 border-green-200"
+      case "Benched":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+      case "On Leave":
+        return "bg-blue-100 text-blue-800 border-blue-200"
+      case "Trial":
+        return "bg-purple-100 text-purple-800 border-purple-200"
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200"
     }
   }
 
   return (
-    <div className="space-y-6 bg-background min-h-screen transition-colors duration-300">
-      {/* Header */}
+    <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <SidebarTrigger />
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">My Profile</h1>
-            <p className="text-muted-foreground">Manage your player profile and settings</p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold">Player Profile</h1>
+          <p className="text-muted-foreground">Manage your player information and gaming setup</p>
         </div>
-        <div className="flex items-center space-x-2">
-          {!isEditing ? (
-            <Button onClick={() => setIsEditing(true)} className="bg-orange-600 hover:bg-orange-700">
-              <Edit className="w-4 h-4 mr-2" />
-              Edit Profile
-            </Button>
-          ) : (
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsEditing(false)
-                  setProfileData(mockPlayerProfile) // Reset changes
-                }}
-              >
+        <div className="flex gap-2">
+          {isEditing ? (
+            <>
+              <Button variant="outline" onClick={() => setIsEditing(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSave} disabled={isLoading} className="bg-green-600 hover:bg-green-700">
-                {isLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Changes
-                  </>
-                )}
+              <Button onClick={handleSave}>
+                <Save className="w-4 h-4 mr-2" />
+                Save Changes
               </Button>
-            </div>
+            </>
+          ) : (
+            <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
           )}
         </div>
       </div>
 
-      {/* Left Menu Buttons */}
-      <div className="flex items-center space-x-2">
-        <Button variant="outline" size="sm" className="flex items-center space-x-2">
-          <User className="w-4 h-4" />
-          <span>Profile</span>
-        </Button>
-        <Button variant="outline" size="sm" className="flex items-center space-x-2">
-          <Bell className="w-4 h-4" />
-          <span>Alert Center</span>
-        </Button>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Picture and Basic Info */}
-        <div className="lg:col-span-1 space-y-6">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground">Profile Picture</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center space-y-4">
-              <Avatar className="w-32 h-32">
-                <AvatarImage src={profileData.profilePicture || "/placeholder.svg"} alt="Profile picture" />
-                <AvatarFallback className="bg-orange-600 text-white text-2xl">
-                  {profileData.ign.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
+        {/* Profile Overview */}
+        <Card className="lg:col-span-1">
+          <CardHeader className="text-center">
+            <div className="relative mx-auto">
+              <Avatar className="w-32 h-32 mx-auto">
+                <AvatarImage src={profile.profilePicture || "/placeholder.svg"} alt={profile.ign} />
+                <AvatarFallback className="text-2xl">{profile.ign.slice(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
               {isEditing && (
-                <div className="w-full">
+                <div className="absolute bottom-0 right-0">
                   <Label htmlFor="profile-upload" className="cursor-pointer">
-                    <div className="flex items-center justify-center w-full h-12 border-2 border-dashed border-muted-foreground/25 rounded-lg hover:border-muted-foreground/50 transition-colors">
-                      <Upload className="w-4 h-4 mr-2" />
-                      <span className="text-sm">Upload New Picture</span>
+                    <div className="bg-primary text-primary-foreground p-2 rounded-full hover:bg-primary/90 transition-colors">
+                      {isUploading ? (
+                        <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      ) : (
+                        <Upload className="w-4 h-4" />
+                      )}
                     </div>
                   </Label>
                   <Input
                     id="profile-upload"
                     type="file"
                     accept="image/*"
-                    onChange={handleProfilePictureUpload}
                     className="hidden"
+                    onChange={handleImageUpload}
                   />
-                  <p className="text-xs text-muted-foreground mt-2 text-center">Max 5MB, PNG/JPG</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
-
-          {/* Status and Tier Cards */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground">Status & Tier</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Status</span>
-                <Badge className={getStatusColor(profileData.status)}>{profileData.status}</Badge>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold">{profile.ign}</h2>
+              <p className="text-muted-foreground">{profile.realName}</p>
+              <div className="flex justify-center gap-2">
+                <Badge className={getTierColor(profile.tier)}>
+                  <Trophy className="w-3 h-3 mr-1" />
+                  {profile.tier}
+                </Badge>
+                <Badge variant="outline" className={getStatusColor(profile.status)}>
+                  {profile.status}
+                </Badge>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Tier</span>
-                <Badge className={getTierColor(profileData.tier)}>{profileData.tier}</Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground">Player ID</p>
+                <p className="font-medium">{profile.playerId}</p>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Role</span>
-                <Badge variant="outline">{profileData.role}</Badge>
+              <div>
+                <p className="text-muted-foreground">Team</p>
+                <p className="font-medium">{profile.team}</p>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Profile Information */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Personal Information */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground">Personal Information</CardTitle>
-              <CardDescription className="text-muted-foreground">Your basic profile information</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="ign" className="text-foreground">
-                    IGN (In-Game Name) *
-                  </Label>
-                  {isEditing ? (
-                    <Input
-                      id="ign"
-                      value={profileData.ign}
-                      onChange={(e) => handleInputChange("ign", e.target.value)}
-                      className="bg-background border-border text-foreground"
-                    />
-                  ) : (
-                    <div className="p-2 bg-muted rounded-md text-foreground">{profileData.ign}</div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-foreground flex items-center">
-                    Real Name <Lock className="w-3 h-3 ml-1 text-muted-foreground" />
-                  </Label>
-                  <div className="p-2 bg-muted/50 rounded-md text-muted-foreground border border-dashed">
-                    {profileData.realName} (Admin Only)
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="playerId" className="text-foreground">
-                    Player ID (Optional)
-                  </Label>
-                  {isEditing ? (
-                    <Input
-                      id="playerId"
-                      value={profileData.playerId}
-                      onChange={(e) => handleInputChange("playerId", e.target.value)}
-                      className="bg-background border-border text-foreground"
-                    />
-                  ) : (
-                    <div className="p-2 bg-muted rounded-md text-foreground">{profileData.playerId}</div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-foreground flex items-center">
-                    Assigned Team <Lock className="w-3 h-3 ml-1 text-muted-foreground" />
-                  </Label>
-                  <div className="p-2 bg-muted/50 rounded-md text-muted-foreground border border-dashed">
-                    {profileData.assignedTeam || "No Team Assigned Yet"} (Auto-Assigned)
-                  </div>
-                </div>
+              <div>
+                <p className="text-muted-foreground">Role</p>
+                <p className="font-medium">{profile.role}</p>
               </div>
+              <div>
+                <p className="text-muted-foreground">Matches</p>
+                <p className="font-medium">{profile.stats.totalMatches}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
+        {/* Basic Information */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Basic Information</CardTitle>
+            <CardDescription>Your personal and gaming details</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="status" className="text-foreground">
-                  Status
-                </Label>
-                {isEditing ? (
-                  <Select value={profileData.status} onValueChange={(value) => handleInputChange("status", value)}>
-                    <SelectTrigger className="bg-background border-border text-foreground">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border-border">
-                      <SelectItem value="Active" className="text-foreground">
-                        Active
-                      </SelectItem>
-                      <SelectItem value="Benched" className="text-foreground">
-                        Benched
-                      </SelectItem>
-                      <SelectItem value="On Leave" className="text-foreground">
-                        On Leave
-                      </SelectItem>
-                      <SelectItem value="Trial" className="text-foreground">
-                        Trial
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <div className="p-2 bg-muted rounded-md">
-                    <Badge className={getStatusColor(profileData.status)}>{profileData.status}</Badge>
-                  </div>
-                )}
+                <Label htmlFor="ign">In-Game Name (IGN)</Label>
+                <Input
+                  id="ign"
+                  value={profile.ign}
+                  onChange={(e) => setProfile((prev) => ({ ...prev, ign: e.target.value }))}
+                  disabled={!isEditing}
+                />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Device & Technical Details */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground flex items-center">
-                <Settings className="w-5 h-5 mr-2" />
-                Device & Technical Details
-              </CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Your gaming setup and technical specifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="device" className="text-foreground">
-                    Device
-                  </Label>
-                  {isEditing ? (
-                    <Input
-                      id="device"
-                      value={profileData.deviceInfo.device}
-                      onChange={(e) => handleDeviceInfoChange("device", e.target.value)}
-                      className="bg-background border-border text-foreground"
-                    />
-                  ) : (
-                    <div className="p-2 bg-muted rounded-md text-foreground">{profileData.deviceInfo.device}</div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="processor" className="text-foreground">
-                    Processor
-                  </Label>
-                  {isEditing ? (
-                    <Input
-                      id="processor"
-                      value={profileData.deviceInfo.processor}
-                      onChange={(e) => handleDeviceInfoChange("processor", e.target.value)}
-                      className="bg-background border-border text-foreground"
-                    />
-                  ) : (
-                    <div className="p-2 bg-muted rounded-md text-foreground">{profileData.deviceInfo.processor}</div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="ram" className="text-foreground">
-                    RAM
-                  </Label>
-                  {isEditing ? (
-                    <Input
-                      id="ram"
-                      value={profileData.deviceInfo.ram}
-                      onChange={(e) => handleDeviceInfoChange("ram", e.target.value)}
-                      className="bg-background border-border text-foreground"
-                    />
-                  ) : (
-                    <div className="p-2 bg-muted rounded-md text-foreground">{profileData.deviceInfo.ram}</div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="storage" className="text-foreground">
-                    Storage
-                  </Label>
-                  {isEditing ? (
-                    <Input
-                      id="storage"
-                      value={profileData.deviceInfo.storage}
-                      onChange={(e) => handleDeviceInfoChange("storage", e.target.value)}
-                      className="bg-background border-border text-foreground"
-                    />
-                  ) : (
-                    <div className="p-2 bg-muted rounded-md text-foreground">{profileData.deviceInfo.storage}</div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="internet" className="text-foreground">
-                    Internet Connection
-                  </Label>
-                  {isEditing ? (
-                    <Input
-                      id="internet"
-                      value={profileData.deviceInfo.internet}
-                      onChange={(e) => handleDeviceInfoChange("internet", e.target.value)}
-                      className="bg-background border-border text-foreground"
-                    />
-                  ) : (
-                    <div className="p-2 bg-muted rounded-md text-foreground">{profileData.deviceInfo.internet}</div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="controls" className="text-foreground">
-                    Control Layout
-                  </Label>
-                  {isEditing ? (
-                    <Input
-                      id="controls"
-                      value={profileData.deviceInfo.controls}
-                      onChange={(e) => handleDeviceInfoChange("controls", e.target.value)}
-                      className="bg-background border-border text-foreground"
-                    />
-                  ) : (
-                    <div className="p-2 bg-muted rounded-md text-foreground">{profileData.deviceInfo.controls}</div>
-                  )}
-                </div>
-              </div>
-
               <div className="space-y-2">
-                <Label htmlFor="sensitivity" className="text-foreground">
-                  Sensitivity Settings
+                <Label htmlFor="realName" className="flex items-center gap-2">
+                  Real Name
+                  <Lock className="w-3 h-3 text-muted-foreground" />
                 </Label>
-                {isEditing ? (
-                  <Input
-                    id="sensitivity"
-                    value={profileData.deviceInfo.sensitivity}
-                    onChange={(e) => handleDeviceInfoChange("sensitivity", e.target.value)}
-                    className="bg-background border-border text-foreground"
-                  />
-                ) : (
-                  <div className="p-2 bg-muted rounded-md text-foreground">{profileData.deviceInfo.sensitivity}</div>
-                )}
+                <Input id="realName" value={profile.realName} disabled={true} className="bg-muted" />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="hud" className="text-foreground">
-                  HUD Layout
+                <Label htmlFor="playerId" className="flex items-center gap-2">
+                  Player ID
+                  <Lock className="w-3 h-3 text-muted-foreground" />
                 </Label>
-                {isEditing ? (
-                  <Textarea
-                    id="hud"
-                    value={profileData.deviceInfo.hud}
-                    onChange={(e) => handleDeviceInfoChange("hud", e.target.value)}
-                    className="bg-background border-border text-foreground"
-                    rows={2}
-                  />
-                ) : (
-                  <div className="p-2 bg-muted rounded-md text-foreground">{profileData.deviceInfo.hud}</div>
-                )}
+                <Input id="playerId" value={profile.playerId} disabled={true} className="bg-muted" />
               </div>
-            </CardContent>
-          </Card>
+              <div className="space-y-2">
+                <Label htmlFor="team" className="flex items-center gap-2">
+                  Team
+                  <Lock className="w-3 h-3 text-muted-foreground" />
+                </Label>
+                <Input id="team" value={profile.team} disabled={true} className="bg-muted" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Account Information */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground flex items-center">
-                <Shield className="w-5 h-5 mr-2" />
-                Account Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-foreground">Join Date</Label>
-                  <div className="p-2 bg-muted rounded-md text-foreground">{profileData.joinDate}</div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-foreground">Last Active</Label>
-                  <div className="p-2 bg-muted rounded-md text-foreground">{profileData.lastActive}</div>
-                </div>
+        {/* Gaming Setup */}
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Monitor className="w-5 h-5" />
+              Gaming Setup & Technical Details
+            </CardTitle>
+            <CardDescription>Your gaming equipment and settings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="monitor" className="flex items-center gap-2">
+                  <Monitor className="w-4 h-4" />
+                  Monitor
+                </Label>
+                <Input
+                  id="monitor"
+                  value={profile.device.monitor}
+                  onChange={(e) =>
+                    setProfile((prev) => ({
+                      ...prev,
+                      device: { ...prev.device, monitor: e.target.value },
+                    }))
+                  }
+                  disabled={!isEditing}
+                  placeholder="e.g., ASUS ROG Swift PG259QN"
+                />
               </div>
-            </CardContent>
-          </Card>
-        </div>
+              <div className="space-y-2">
+                <Label htmlFor="headset" className="flex items-center gap-2">
+                  <Headphones className="w-4 h-4" />
+                  Headset
+                </Label>
+                <Input
+                  id="headset"
+                  value={profile.device.headset}
+                  onChange={(e) =>
+                    setProfile((prev) => ({
+                      ...prev,
+                      device: { ...prev.device, headset: e.target.value },
+                    }))
+                  }
+                  disabled={!isEditing}
+                  placeholder="e.g., SteelSeries Arctis Pro"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mouse" className="flex items-center gap-2">
+                  <Mouse className="w-4 h-4" />
+                  Mouse
+                </Label>
+                <Input
+                  id="mouse"
+                  value={profile.device.mouse}
+                  onChange={(e) =>
+                    setProfile((prev) => ({
+                      ...prev,
+                      device: { ...prev.device, mouse: e.target.value },
+                    }))
+                  }
+                  disabled={!isEditing}
+                  placeholder="e.g., Logitech G Pro X Superlight"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="keyboard" className="flex items-center gap-2">
+                  <Keyboard className="w-4 h-4" />
+                  Keyboard
+                </Label>
+                <Input
+                  id="keyboard"
+                  value={profile.device.keyboard}
+                  onChange={(e) =>
+                    setProfile((prev) => ({
+                      ...prev,
+                      device: { ...prev.device, keyboard: e.target.value },
+                    }))
+                  }
+                  disabled={!isEditing}
+                  placeholder="e.g., Corsair K65 RGB Mini"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mousepad">Mousepad</Label>
+                <Input
+                  id="mousepad"
+                  value={profile.device.mousepad}
+                  onChange={(e) =>
+                    setProfile((prev) => ({
+                      ...prev,
+                      device: { ...prev.device, mousepad: e.target.value },
+                    }))
+                  }
+                  disabled={!isEditing}
+                  placeholder="e.g., SteelSeries QcK Heavy"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dpi">DPI</Label>
+                <Input
+                  id="dpi"
+                  value={profile.device.dpi}
+                  onChange={(e) =>
+                    setProfile((prev) => ({
+                      ...prev,
+                      device: { ...prev.device, dpi: e.target.value },
+                    }))
+                  }
+                  disabled={!isEditing}
+                  placeholder="e.g., 800"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2 lg:col-span-1">
+                <Label htmlFor="sensitivity">In-Game Sensitivity</Label>
+                <Input
+                  id="sensitivity"
+                  value={profile.device.sensitivity}
+                  onChange={(e) =>
+                    setProfile((prev) => ({
+                      ...prev,
+                      device: { ...prev.device, sensitivity: e.target.value },
+                    }))
+                  }
+                  disabled={!isEditing}
+                  placeholder="e.g., 0.35"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Performance Stats */}
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <CardTitle>Performance Overview</CardTitle>
+            <CardDescription>Your current season statistics</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-4 bg-muted/50 rounded-lg">
+                <div className="text-2xl font-bold text-primary">{profile.stats.totalMatches}</div>
+                <div className="text-sm text-muted-foreground">Total Matches</div>
+              </div>
+              <div className="text-center p-4 bg-muted/50 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">{profile.stats.winRate}%</div>
+                <div className="text-sm text-muted-foreground">Win Rate</div>
+              </div>
+              <div className="text-center p-4 bg-muted/50 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">{profile.stats.avgKills}</div>
+                <div className="text-sm text-muted-foreground">Avg Kills</div>
+              </div>
+              <div className="text-center p-4 bg-muted/50 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">#{profile.stats.avgPlacement}</div>
+                <div className="text-sm text-muted-foreground">Avg Placement</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
