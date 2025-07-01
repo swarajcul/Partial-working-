@@ -89,7 +89,7 @@ Resources:
       DBInstanceIdentifier: !Sub '${Environment}-esports-db'
       DBInstanceClass: db.t3.micro
       Engine: postgres
-      EngineVersion: '16.2'
+      EngineVersion: '15.5'
       AllocatedStorage: '20'
       StorageType: gp2
       DBName: esports_platform
