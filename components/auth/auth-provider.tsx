@@ -9,7 +9,7 @@ type User = {
   id: string
   name: string
   email: string
-  role: "admin" | "coach" | "analyst" | "player" | null
+  role: "admin" | "manager" | "coach" | "analyst" | "player" | null
   team?: string
 }
 
@@ -113,13 +113,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    // Mock login for other credentials
+    // Mock login for other credentials with role detection
+    let userRole: User["role"] = "player"
+    if (email.includes("admin")) userRole = "admin"
+    else if (email.includes("manager")) userRole = "manager"
+    else if (email.includes("coach")) userRole = "coach"
+    else if (email.includes("analyst")) userRole = "analyst"
+
     const mockUser: User = {
       id: "1",
       name: email.split("@")[0],
       email,
-      role: email.includes("admin") ? "admin" : "player",
-      team: email.includes("admin") ? undefined : "Rebellion",
+      role: userRole,
+      team: userRole === "admin" || userRole === "manager" ? undefined : "Rebellion",
     }
 
     setUser(mockUser)
@@ -132,6 +138,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null)
     localStorage.removeItem("user")
     localStorage.removeItem("sessionExpiry")
+    sessionStorage.removeItem("testingRole")
+    sessionStorage.removeItem("originalRole")
+    setIsRoleTesting(false)
+    setOriginalRole(null)
   }
 
   const switchRole = (role: UserRole) => {
@@ -141,6 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!isRoleTesting) {
       setOriginalRole(user.role as UserRole)
       setIsRoleTesting(true)
+      sessionStorage.setItem("originalRole", user.role || "")
     }
 
     // Update user role
@@ -149,7 +160,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Store in session storage (not localStorage to avoid persistence)
     sessionStorage.setItem("testingRole", role)
-    sessionStorage.setItem("originalRole", originalRole || user.role || "")
   }
 
   const resetRole = () => {

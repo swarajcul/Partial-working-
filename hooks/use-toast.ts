@@ -180,9 +180,21 @@ function useToast() {
 }
 
 // Simple toast function for direct use
-export const toastFunction = ({ title, description, variant = "default" }: Omit<Toast, "id">) => {
-  // This is a simplified version - in a real app you'd use a toast provider
-  console.log(`Toast: ${title}${description ? ` - ${description}` : ""}`)
+export const toast = ({ title, description, variant = "default" }: Omit<Toast, "id">) => {
+  const id = genId()
+  const newToast: ToasterToast = { id, title, description, variant, open: true }
+
+  dispatch({
+    type: "ADD_TOAST",
+    toast: newToast,
+  })
+
+  // Auto-remove toast after 5 seconds
+  setTimeout(() => {
+    dispatch({ type: "REMOVE_TOAST", toastId: id })
+  }, 5000)
+
+  return { id }
 }
 
 export { useToast }
