@@ -9,7 +9,7 @@
     "lint": "next lint",
     "setup": "chmod +x scripts/setup-local.sh && ./scripts/setup-local.sh",
     "aws:deploy": "chmod +x scripts/deploy-aws.sh && ./scripts/deploy-aws.sh",
-    "db:migrate": "ts-node -r dotenv/config ./scripts/migrate-database.ts",
+    "db:migrate": "ts-node -r dotenv/config --project tsconfig.scripts.json scripts/migrate-database.ts",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
