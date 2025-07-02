@@ -1,5 +1,5 @@
 import { Pool, type PoolClient } from "pg"
-import { awsConfig } from "./aws-config"
+import { AWS_CONFIG } from "./aws-config"
 
 class DatabaseService {
   private pool: Pool
@@ -7,11 +7,11 @@ class DatabaseService {
 
   private constructor() {
     this.pool = new Pool({
-      host: awsConfig.rds.host,
-      port: awsConfig.rds.port,
-      database: awsConfig.rds.database,
-      user: awsConfig.rds.username,
-      password: awsConfig.rds.password,
+      host: AWS_CONFIG.rds.host,
+      port: AWS_CONFIG.rds.port,
+      database: AWS_CONFIG.rds.database,
+      user: AWS_CONFIG.rds.username,
+      password: AWS_CONFIG.rds.password,
       ssl: {
         rejectUnauthorized: false, // For AWS RDS
       },
