@@ -1,3 +1,6 @@
+import * as dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
 import { db, initializeDatabase } from "../lib/aws-database"
 
 async function runMigrations() {
