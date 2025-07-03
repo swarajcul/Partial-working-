@@ -8,7 +8,7 @@ import {
 import { AWS_CONFIG } from "./aws-config"
 
 const cognitoClient = new CognitoIdentityProviderClient({
-  region: awsConfig.region,
+  region: AWS_CONFIG.region,
 })
 
 export interface AuthUser {
@@ -39,7 +39,7 @@ export class AWSAuthService {
     try {
       const command = new InitiateAuthCommand({
         AuthFlow: "USER_PASSWORD_AUTH",
-        ClientId: awsConfig.cognito.userPoolClientId,
+        ClientId: AWS_CONFIG.cognito.userPoolClientId,
         AuthParameters: {
           USERNAME: credentials.email,
           PASSWORD: credentials.password,
@@ -80,7 +80,7 @@ export class AWSAuthService {
   static async signup(credentials: SignupCredentials): Promise<{ userSub: string; codeDeliveryDetails: any }> {
     try {
       const command = new SignUpCommand({
-        ClientId: awsConfig.cognito.userPoolClientId,
+        ClientId: AWS_CONFIG.cognito.userPoolClientId,
         Username: credentials.email,
         Password: credentials.password,
         UserAttributes: [
@@ -114,7 +114,7 @@ export class AWSAuthService {
   static async confirmSignup(email: string, confirmationCode: string): Promise<void> {
     try {
       const command = new ConfirmSignUpCommand({
-        ClientId: awsConfig.cognito.userPoolClientId,
+        ClientId: AWS_CONFIG.cognito.userPoolClientId,
         Username: email,
         ConfirmationCode: confirmationCode,
       })
@@ -129,7 +129,7 @@ export class AWSAuthService {
   static async resendConfirmationCode(email: string): Promise<void> {
     try {
       const command = new ResendConfirmationCodeCommand({
-        ClientId: awsConfig.cognito.userPoolClientId,
+        ClientId: AWS_CONFIG.cognito.userPoolClientId,
         Username: email,
       })
 
@@ -144,12 +144,7 @@ export class AWSAuthService {
     try {
       const base64Url = token.split(".")[1]
       const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/")
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split("")
-          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-          .join(""),
-      )
+      const jsonPayload = Buffer.from(base64, "base64").toString("utf-8")
       return JSON.parse(jsonPayload)
     } catch (error) {
       console.error("JWT decode error:", error)
@@ -161,7 +156,7 @@ export class AWSAuthService {
     try {
       const command = new InitiateAuthCommand({
         AuthFlow: "REFRESH_TOKEN_AUTH",
-        ClientId: awsConfig.cognito.userPoolClientId,
+        ClientId: AWS_CONFIG.cognito.userPoolClientId,
         AuthParameters: {
           REFRESH_TOKEN: refreshToken,
         },
