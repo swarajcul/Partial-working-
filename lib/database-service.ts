@@ -42,24 +42,114 @@ export interface AttendanceRecord {
   created_at: string
 }
 
-// Mock data for development
+// Mock data for development, fully aligned with interfaces
 const MOCK_DATA = {
   users: [
-    { id: "1", email: "admin@esports.com", role: "admin", name: "Admin User", team: "Raptors Esports" },
-    { id: "2", email: "manager@esports.com", role: "manager", name: "Team Manager", team: "Raptors Esports" },
-    { id: "3", email: "coach@esports.com", role: "coach", name: "Head Coach", team: "Raptors Esports" },
-    { id: "4", email: "analyst@esports.com", role: "analyst", name: "Data Analyst", team: "Raptors Esports" },
-    { id: "5", email: "player@esports.com", role: "player", name: "Pro Player", team: "Raptors Esports" },
+    {
+      id: "1",
+      email: "admin@esports.com",
+      role: "admin",
+      name: "Admin User",
+      team_id: "1",
+      avatar_url: "/avatars/avatar1.png",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: "2",
+      email: "manager@esports.com",
+      role: "manager",
+      name: "Team Manager",
+      team_id: "1",
+      avatar_url: "/avatars/avatar2.png",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: "3",
+      email: "coach@esports.com",
+      role: "coach",
+      name: "Head Coach",
+      team_id: "1",
+      avatar_url: "/avatars/avatar3.png",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: "4",
+      email: "analyst@esports.com",
+      role: "analyst",
+      name: "Data Analyst",
+      team_id: "1",
+      avatar_url: "/avatars/avatar4.png",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: "5",
+      email: "player@esports.com",
+      role: "player",
+      name: "Pro Player",
+      team_id: "1",
+      avatar_url: "/avatars/avatar5.png",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  ],
+  teams: [
+    {
+      id: "1",
+      name: "Raptors Esports",
+      description: "Valorant Division",
+      logo_url: "/logos/raptors.png",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
   ],
   performance: [
-    { id: "1", userId: "5", match: "Scrim vs Team Alpha", kills: 15, deaths: 8, assists: 12, date: "2024-01-15" },
-    { id: "2", userId: "5", match: "Tournament Final", kills: 22, deaths: 5, assists: 18, date: "2024-01-14" },
+    {
+      id: "1",
+      user_id: "5",
+      match_date: "2024-01-15",
+      kills: 15,
+      deaths: 8,
+      assists: 12,
+      damage_dealt: 3200,
+      placement: 1,
+      notes: "Scrim vs Team Alpha",
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: "2",
+      user_id: "5",
+      match_date: "2024-01-14",
+      kills: 22,
+      deaths: 5,
+      assists: 18,
+      damage_dealt: 4500,
+      placement: 1,
+      notes: "Tournament Final",
+      created_at: new Date().toISOString(),
+    },
   ],
   attendance: [
-    { id: "1", userId: "5", date: "2024-01-15", status: "present", notes: "On time" },
-    { id: "2", userId: "5", date: "2024-01-14", status: "present", notes: "Great performance" },
+    {
+      id: "1",
+      user_id: "5",
+      date: "2024-01-15",
+      status: "present",
+      notes: "On time",
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: "2",
+      user_id: "5",
+      date: "2024-01-14",
+      status: "present",
+      notes: "Great performance",
+      created_at: new Date().toISOString(),
+    },
   ],
-  teams: [{ id: "1", name: "Raptors Esports", game: "Valorant", members: ["5"], coach: "3", manager: "2" }],
 }
 
 export interface DatabaseQuery {
@@ -104,7 +194,7 @@ class DatabaseService {
       // Apply where conditions
       if (query.where) {
         result = result.filter((item) => {
-          return Object.entries(query.where!).every(([key, value]) => item[key] === value)
+          return Object.entries(query.where!).every(([key, value]) => item[key as keyof typeof item] === value)
         })
       }
 
@@ -228,7 +318,7 @@ class DatabaseService {
     const dbService = new DatabaseService()
     if (!this.isAWSConfigured || isDevelopmentMode()) {
       return userId
-        ? MOCK_DATA.performance.filter((p) => p.userId === userId)
+        ? MOCK_DATA.performance.filter((p) => p.user_id === userId)
         : (MOCK_DATA.performance as PerformanceRecord[])
     }
     // TODO: Implement AWS RDS query
@@ -259,7 +349,7 @@ class DatabaseService {
     const dbService = new DatabaseService()
     if (!this.isAWSConfigured || isDevelopmentMode()) {
       return userId
-        ? MOCK_DATA.attendance.filter((a) => a.userId === userId)
+        ? MOCK_DATA.attendance.filter((a) => a.user_id === userId)
         : (MOCK_DATA.attendance as AttendanceRecord[])
     }
     // TODO: Implement AWS RDS query
@@ -278,7 +368,9 @@ class DatabaseService {
 
     if (!this.isAWSConfigured || isDevelopmentMode()) {
       // Remove existing record for same user/date
-      const existingIndex = MOCK_DATA.attendance.findIndex((a) => a.userId === record.user_id && a.date === record.date)
+      const existingIndex = MOCK_DATA.attendance.findIndex(
+        (a) => a.user_id === record.user_id && a.date === record.date,
+      )
       if (existingIndex >= 0) {
         MOCK_DATA.attendance[existingIndex] = newRecord
       } else {
