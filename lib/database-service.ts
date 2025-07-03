@@ -43,7 +43,12 @@ export interface AttendanceRecord {
 }
 
 // Mock data for development, fully aligned with interfaces
-const MOCK_DATA = {
+const MOCK_DATA: {
+  users: User[]
+  teams: Team[]
+  performance: PerformanceRecord[]
+  attendance: AttendanceRecord[]
+} = {
   users: [
     {
       id: "1",
@@ -329,7 +334,7 @@ class DatabaseService {
       created_at: new Date().toISOString(),
     }
     if (!this.isAWSConfigured || isDevelopmentMode()) {
-      ;(MOCK_DATA.performance as any[]).push(newRecord)
+      MOCK_DATA.performance.push(newRecord)
       return newRecord
     }
     await dbService.insert("performance", record)
@@ -362,7 +367,7 @@ class DatabaseService {
       if (existingIndex >= 0) {
         MOCK_DATA.attendance[existingIndex] = newRecord
       } else {
-        ;(MOCK_DATA.attendance as any[]).push(newRecord)
+        MOCK_DATA.attendance.push(newRecord)
       }
       return newRecord
     }
