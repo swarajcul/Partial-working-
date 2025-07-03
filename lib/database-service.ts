@@ -154,7 +154,7 @@ const MOCK_DATA = {
       user_id: "4",
       date: "2024-07-02",
       status: "present",
-      notes: "", // Empty string as requested
+      notes: "",
       created_at: new Date().toISOString(),
     },
     {
@@ -188,10 +188,7 @@ class DatabaseService {
 
   async query(sql: string, params?: any[]): Promise<any[]> {
     if (isDevelopmentMode()) {
-      // Mock database queries for development
       console.log("Mock DB Query:", sql, params)
-
-      // Simple mock responses based on common queries
       if (sql.includes("users")) {
         return MOCK_DATA.users
       } else if (sql.includes("performance")) {
@@ -201,10 +198,8 @@ class DatabaseService {
       } else if (sql.includes("teams")) {
         return MOCK_DATA.teams
       }
-
       return []
     } else {
-      // TODO: Implement real database queries with AWS RDS
       throw new Error("AWS RDS not implemented yet")
     }
   }
@@ -212,24 +207,17 @@ class DatabaseService {
   async find(query: DatabaseQuery): Promise<any[]> {
     if (isDevelopmentMode()) {
       const data = MOCK_DATA[query.table as keyof typeof MOCK_DATA] || []
-
       let result = [...data]
-
-      // Apply where conditions
       if (query.where) {
         result = result.filter((item) => {
           return Object.entries(query.where!).every(([key, value]) => item[key as keyof typeof item] === value)
         })
       }
-
-      // Apply limit
       if (query.limit) {
         result = result.slice(0, query.limit)
       }
-
       return result
     } else {
-      // TODO: Implement real database queries
       return []
     }
   }
@@ -237,14 +225,11 @@ class DatabaseService {
   async insert(table: string, data: Record<string, any>): Promise<any> {
     if (isDevelopmentMode()) {
       const newItem = { id: Date.now().toString(), ...data, created_at: new Date().toISOString() }
-
       if (MOCK_DATA[table as keyof typeof MOCK_DATA]) {
         ;(MOCK_DATA[table as keyof typeof MOCK_DATA] as any[]).push(newItem)
       }
-
       return newItem
     } else {
-      // TODO: Implement real database insert
       throw new Error("AWS RDS not implemented yet")
     }
   }
@@ -253,15 +238,12 @@ class DatabaseService {
     if (isDevelopmentMode()) {
       const items = MOCK_DATA[table as keyof typeof MOCK_DATA] as any[]
       const index = items.findIndex((item) => item.id === id)
-
       if (index !== -1) {
         items[index] = { ...items[index], ...data }
         return items[index]
       }
-
       return null
     } else {
-      // TODO: Implement real database update
       throw new Error("AWS RDS not implemented yet")
     }
   }
@@ -270,15 +252,12 @@ class DatabaseService {
     if (isDevelopmentMode()) {
       const items = MOCK_DATA[table as keyof typeof MOCK_DATA] as any[]
       const index = items.findIndex((item) => item.id === id)
-
       if (index !== -1) {
         items.splice(index, 1)
         return true
       }
-
       return false
     } else {
-      // TODO: Implement real database delete
       throw new Error("AWS RDS not implemented yet")
     }
   }
@@ -287,13 +266,11 @@ class DatabaseService {
     return true
   }
 
-  // User operations
   static async getUsers(): Promise<User[]> {
     const dbService = new DatabaseService()
     if (!this.isAWSConfigured || isDevelopmentMode()) {
       return MOCK_DATA.users as User[]
     }
-    // TODO: Implement AWS RDS query
     return dbService.query("SELECT * FROM users")
   }
 
@@ -302,7 +279,6 @@ class DatabaseService {
     if (!this.isAWSConfigured || isDevelopmentMode()) {
       return MOCK_DATA.users.find((u) => u.id === id) || null
     }
-    // TODO: Implement AWS RDS query
     const users = await dbService.query("SELECT * FROM users WHERE id = ?", [id])
     return users.length > 0 ? users[0] : null
   }
@@ -312,18 +288,15 @@ class DatabaseService {
     if (!this.isAWSConfigured || isDevelopmentMode()) {
       return MOCK_DATA.users.find((u) => u.email === email) || null
     }
-    // TODO: Implement AWS RDS query
     const users = await dbService.query("SELECT * FROM users WHERE email = ?", [email])
     return users.length > 0 ? users[0] : null
   }
 
-  // Team operations
   static async getTeams(): Promise<Team[]> {
     const dbService = new DatabaseService()
     if (!this.isAWSConfigured || isDevelopmentMode()) {
       return MOCK_DATA.teams as Team[]
     }
-    // TODO: Implement AWS RDS query
     return dbService.query("SELECT * FROM teams")
   }
 
@@ -332,12 +305,10 @@ class DatabaseService {
     if (!this.isAWSConfigured || isDevelopmentMode()) {
       return MOCK_DATA.teams.find((t) => t.id === id) || null
     }
-    // TODO: Implement AWS RDS query
     const teams = await dbService.query("SELECT * FROM teams WHERE id = ?", [id])
     return teams.length > 0 ? teams[0] : null
   }
 
-  // Performance operations
   static async getPerformanceRecords(userId?: string): Promise<PerformanceRecord[]> {
     const dbService = new DatabaseService()
     if (!this.isAWSConfigured || isDevelopmentMode()) {
@@ -345,7 +316,6 @@ class DatabaseService {
         ? MOCK_DATA.performance.filter((p) => p.user_id === userId)
         : (MOCK_DATA.performance as PerformanceRecord[])
     }
-    // TODO: Implement AWS RDS query
     const sql = userId ? "SELECT * FROM performance WHERE user_id = ?" : "SELECT * FROM performance"
     const params = userId ? [userId] : []
     return dbService.query(sql, params)
@@ -358,17 +328,14 @@ class DatabaseService {
       id: `perf-${Date.now()}`,
       created_at: new Date().toISOString(),
     }
-
     if (!this.isAWSConfigured || isDevelopmentMode()) {
       ;(MOCK_DATA.performance as any[]).push(newRecord)
       return newRecord
     }
-    // TODO: Implement AWS RDS insert
     await dbService.insert("performance", record)
     return newRecord
   }
 
-  // Attendance operations
   static async getAttendanceRecords(userId?: string): Promise<AttendanceRecord[]> {
     const dbService = new DatabaseService()
     if (!this.isAWSConfigured || isDevelopmentMode()) {
@@ -376,7 +343,6 @@ class DatabaseService {
         ? MOCK_DATA.attendance.filter((a) => a.user_id === userId)
         : (MOCK_DATA.attendance as AttendanceRecord[])
     }
-    // TODO: Implement AWS RDS query
     const sql = userId ? "SELECT * FROM attendance WHERE user_id = ?" : "SELECT * FROM attendance"
     const params = userId ? [userId] : []
     return dbService.query(sql, params)
@@ -389,9 +355,7 @@ class DatabaseService {
       id: `att-${Date.now()}`,
       created_at: new Date().toISOString(),
     }
-
     if (!this.isAWSConfigured || isDevelopmentMode()) {
-      // Remove existing record for same user/date
       const existingIndex = MOCK_DATA.attendance.findIndex(
         (a) => a.user_id === record.user_id && a.date === record.date,
       )
@@ -402,30 +366,17 @@ class DatabaseService {
       }
       return newRecord
     }
-    // TODO: Implement AWS RDS upsert
     await dbService.update("attendance", record.user_id, record)
     return newRecord
   }
 
-  // Health check
   static async healthCheck(): Promise<boolean> {
     const dbService = new DatabaseService()
     try {
-      // For development, always return true
       if (!this.isAWSConfigured || isDevelopmentMode()) {
         return true
       }
-      // TODO: Implement AWS RDS health check
       return await dbService.isHealthy()
-    } catch (error) {
-      console.error("Database health check failed:", error)
-      return false
-    }
-  }
-}
-
-export const databaseService = new DatabaseService()
-
     } catch (error) {
       console.error("Database health check failed:", error)
       return false
