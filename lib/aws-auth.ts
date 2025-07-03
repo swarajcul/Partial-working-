@@ -5,7 +5,7 @@ import {
   ConfirmSignUpCommand,
   ResendConfirmationCodeCommand,
 } from "@aws-sdk/client-cognito-identity-provider"
-import { awsConfig } from "./aws-config"
+import { AWS_CONFIG } from "./aws-config"
 
 const cognitoClient = new CognitoIdentityProviderClient({
   region: awsConfig.region,
