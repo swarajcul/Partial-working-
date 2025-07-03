@@ -110,7 +110,7 @@ const MOCK_DATA = {
     {
       id: "1",
       user_id: "5",
-      match_date: "2024-01-15",
+      match_date: "2024-07-01",
       kills: 15,
       deaths: 8,
       assists: 12,
@@ -122,7 +122,7 @@ const MOCK_DATA = {
     {
       id: "2",
       user_id: "5",
-      match_date: "2024-01-14",
+      match_date: "2024-07-02",
       kills: 22,
       deaths: 5,
       assists: 18,
@@ -136,17 +136,41 @@ const MOCK_DATA = {
     {
       id: "1",
       user_id: "5",
-      date: "2024-01-15",
+      date: "2024-07-01",
       status: "present",
-      notes: "On time",
+      notes: "On time for scrims.",
       created_at: new Date().toISOString(),
     },
     {
       id: "2",
       user_id: "5",
-      date: "2024-01-14",
+      date: "2024-07-02",
+      status: "late",
+      notes: "Arrived 15 minutes late, traffic.",
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: "3",
+      user_id: "4",
+      date: "2024-07-02",
       status: "present",
-      notes: "Great performance",
+      notes: "", // Empty string as requested
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: "4",
+      user_id: "3",
+      date: "2024-07-03",
+      status: "absent",
+      notes: "Doctor's appointment.",
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: "5",
+      user_id: "5",
+      date: "2024-07-03",
+      status: "excused",
+      notes: "Family emergency, approved by manager.",
       created_at: new Date().toISOString(),
     },
   ],
@@ -212,7 +236,7 @@ class DatabaseService {
 
   async insert(table: string, data: Record<string, any>): Promise<any> {
     if (isDevelopmentMode()) {
-      const newItem = { id: Date.now().toString(), ...data }
+      const newItem = { id: Date.now().toString(), ...data, created_at: new Date().toISOString() }
 
       if (MOCK_DATA[table as keyof typeof MOCK_DATA]) {
         ;(MOCK_DATA[table as keyof typeof MOCK_DATA] as any[]).push(newItem)
@@ -393,6 +417,15 @@ class DatabaseService {
       }
       // TODO: Implement AWS RDS health check
       return await dbService.isHealthy()
+    } catch (error) {
+      console.error("Database health check failed:", error)
+      return false
+    }
+  }
+}
+
+export const databaseService = new DatabaseService()
+
     } catch (error) {
       console.error("Database health check failed:", error)
       return false
