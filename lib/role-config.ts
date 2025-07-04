@@ -170,8 +170,29 @@ export function hasPermission(role: UserRole, permission: keyof RolePermissions)
   return rolePermissions[role][permission]
 }
 
-export function getVisibleMenuItems(role: UserRole) {
-  const permissions = rolePermissions[role]
+export function getVisibleMenuItems(role?: UserRole) { // Allow role to be optional
+  const defaultMenuItems = [
+    {
+      title: "Overview",
+      url: "/dashboard",
+      icon: "Home",
+      visible: true,
+    },
+    {
+      title: "Profile",
+      url: "/dashboard/profile",
+      icon: "User",
+      visible: true, // Basic visibility for profile
+    },
+  ];
+
+  if (!role || !rolePermissions[role]) {
+    // If role is undefined, or not a valid key in rolePermissions,
+    // return a minimal safe menu.
+    return defaultMenuItems.filter(item => item.visible);
+  }
+
+  const permissions = rolePermissions[role];
 
   const menuItems = [
     {

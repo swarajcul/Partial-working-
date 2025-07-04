@@ -12,7 +12,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { user, loading } = useAuth()
+  const { user, loading, profile } = useAuth() // Added profile
   const router = useRouter()
 
   useEffect(() => {
@@ -21,7 +21,8 @@ export default function DashboardLayout({
     }
   }, [user, loading, router])
 
-  if (loading || !user) {
+  // If loading session, or no user, or profile not yet loaded
+  if (loading || !user || !profile) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <p>Loading dashboard...</p>
