@@ -60,16 +60,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single()
 
         if (error) {
-          console.error("Error fetching profile:", error)
+          console.error("Error fetching profile:", error);
+          setProfile(null); // Explicitly set to null on error
+        } else if (!data) {
+          console.log(`No profile found for user ${user.id}. Redirecting to onboarding or setting default.`);
+          setProfile({ status: 'NO_PROFILE' }); // Special status for no profile
         } else {
-          setProfile(data)
+          setProfile(data);
         }
       }
       fetchProfile()
     } else if (!user) {
       setProfile(null)
     }
-  }, [user, profile])
+  }, [user?.id]) // Changed dependency from [user, profile] to [user?.id]
 
   // Handle logout
   const signOut = async () => {
