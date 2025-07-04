@@ -5,12 +5,18 @@ import type { Session, User } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase-client"
 import { useRouter } from "next/navigation"
 
+// Extend the AuthContextType to include permissions
 type AuthContextType = {
   session: Session | null
   user: User | null
   profile: any | null
   loading: boolean
   signOut: () => Promise<void>
+  permissions: {
+    canViewProfile: boolean
+    canEditProfile: boolean
+    isAdmin: boolean
+  }
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -22,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
+  // Fetch session on load
   useEffect(() => {
     const getSession = async () => {
       const {
@@ -34,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     getSession()
 
+    // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
@@ -45,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Fetch user profile once logged in
   useEffect(() => {
     if (user && !profile) {
       const fetchProfile = async () => {
@@ -62,22 +71,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, profile])
 
+  // Handle logout
   const signOut = async () => {
     await supabase.auth.signOut()
     router.push("/auth/login")
   }
 
-  const value = {
+  // Define permissions based on profile
+  const permissions = {
+    canViewProfile: !!profile,
+    canEditProfile: profile?.role === "admin" || profile?.role === "manager",
+    isAdmin: profile?.role === "admin",
+  }
+
+  // Context value to be shared
+  const value: AuthContextType = {
     session,
     user,
     profile,
     loading,
     signOut,
+    permissions,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
+// Hook to access auth context
 export function useAuth() {
   const context = useContext(AuthContext)
   if (context === undefined) {
