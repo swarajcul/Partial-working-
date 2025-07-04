@@ -30,22 +30,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Fetch session on load
   useEffect(() => {
+    console.log("[AuthProvider] Initializing session effect");
     const getSession = async () => {
+      console.log("[AuthProvider] getSession: Fetching session...");
       const {
         data: { session },
-      } = await supabase.auth.getSession()
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
+      } = await supabase.auth.getSession();
+      console.log("[AuthProvider] getSession: Fetched session:", session);
+      setSession(session);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      console.log("[AuthProvider] getSession: User set to:", currentUser);
+      setLoading(false);
+      console.log("[AuthProvider] getSession: Loading set to false.");
     }
 
-    getSession()
+    getSession();
 
     // Listen for auth changes
+    console.log("[AuthProvider] Setting up onAuthStateChange listener");
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
+      console.log("[AuthProvider] onAuthStateChange: Event triggered:", _event);
+      console.log("[AuthProvider] onAuthStateChange: New session:", session);
+      setSession(session);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      console.log("[AuthProvider] onAuthStateChange: User set to:", currentUser);
+      setLoading(false);
+      console.log("[AuthProvider] onAuthStateChange: Loading set to false.");
     })
 
     return () => {
@@ -55,25 +67,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Fetch user profile once logged in
   useEffect(() => {
-    if (user && !profile) {
+    console.log(`[AuthProvider] Profile effect triggered. User: ${user ? user.id : 'null'}, Profile: ${profile ? JSON.stringify(profile) : 'null'}`);
+    if (user && !profile) { // Only fetch if user exists and profile is not yet set (or is null)
+      console.log(`[AuthProvider] User ${user.id} exists and no profile loaded yet. Fetching profile.`);
       const fetchProfile = async () => {
-        const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+        console.log(`[AuthProvider] fetchProfile: Fetching for user ID: ${user.id}`);
+        const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
         if (error) {
-          console.error("Error fetching profile:", error);
-          setProfile(null); // Explicitly set to null on error
+          console.error("[AuthProvider] fetchProfile: Error fetching profile:", error);
+          setProfile(null);
+          console.log("[AuthProvider] fetchProfile: Profile set to null due to error.");
         } else if (!data) {
-          console.log(`No profile found for user ${user.id}. Redirecting to onboarding or setting default.`);
-          setProfile({ status: 'NO_PROFILE' }); // Special status for no profile
+          console.log(`[AuthProvider] fetchProfile: No profile data found for user ${user.id}.`);
+          setProfile({ status: 'NO_PROFILE' });
+          console.log("[AuthProvider] fetchProfile: Profile set to { status: 'NO_PROFILE' }.");
         } else {
+          console.log("[AuthProvider] fetchProfile: Profile data found:", data);
           setProfile(data);
+          console.log("[AuthProvider] fetchProfile: Profile set with fetched data.");
         }
       }
-      fetchProfile()
+      fetchProfile();
+    } else if (user && profile) {
+      console.log(`[AuthProvider] Profile effect: User ${user.id} exists and profile is already loaded.`);
     } else if (!user) {
-      setProfile(null)
+      console.log("[AuthProvider] Profile effect: No user, ensuring profile is null.");
+      setProfile(null);
     }
-  }, [user?.id]) // Changed dependency from [user, profile] to [user?.id]
+  }, [user?.id]); // Dependency on user?.id
 
   // Handle logout
   const signOut = async () => {
