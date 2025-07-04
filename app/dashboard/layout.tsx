@@ -5,7 +5,7 @@ import type React from "react"
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
-import DashboardSidebar from "@/components/dashboard/dashboard-sidebar"
+import {DashboardSidebar} from "@/components/dashboard/dashboard-sidebar"
 
 export default function DashboardLayout({
   children,
