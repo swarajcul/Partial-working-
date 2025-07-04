@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # AWS Deployment Script for Esports Platform
 set -e
 

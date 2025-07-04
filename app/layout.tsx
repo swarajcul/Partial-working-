@@ -11,6 +11,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Raptors Esports Platform",
   description: "The central hub for Raptors Esports team management and analytics.",
+    generator: 'v0.dev'
 }
 
 export default function RootLayout({

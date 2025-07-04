@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import type React from "react"
+
+import { useState } from "react"
 import { supabase } from "@/lib/supabase-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,12 +12,12 @@ import { useToast } from "@/hooks/use-toast"
 export default function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
   const { toast } = useToast()
 
-  const handleLogin = async (e: FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setIsLoading(true)
+    setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -23,18 +25,18 @@ export default function LoginForm() {
 
     if (error) {
       toast({
-        title: "Login Failed",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       })
     } else {
       toast({
-        title: "Login Successful",
-        description: "Redirecting to your dashboard...",
+        title: "Success",
+        description: "Logged in successfully! Redirecting...",
       })
-      // No need to redirect here, the layout/page will handle it
+      // Redirection is handled by the page component now
     }
-    setIsLoading(false)
+    setLoading(false)
   }
 
   return (
@@ -48,22 +50,14 @@ export default function LoginForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          disabled={isLoading}
         />
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          disabled={isLoading}
-        />
+        <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
       </div>
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? "Logging in..." : "Login"}
+      <Button type="submit" className="w-full" disabled={loading}>
+        {loading ? "Signing In..." : "Sign In"}
       </Button>
     </form>
   )

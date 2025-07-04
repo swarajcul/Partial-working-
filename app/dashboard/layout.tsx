@@ -12,19 +12,19 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { session, isLoading } = useAuth()
+  const { user, loading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!isLoading && !session) {
+    if (!loading && !user) {
       router.push("/auth/login")
     }
-  }, [session, isLoading, router])
+  }, [user, loading, router])
 
-  if (isLoading || !session) {
+  if (loading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
-        <div className="text-lg">Loading...</div>
+        <p>Loading dashboard...</p>
       </div>
     )
   }
@@ -32,7 +32,7 @@ export default function DashboardLayout({
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
       <DashboardSidebar />
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">{children}</main>
+      <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">{children}</main>
     </div>
   )
 }

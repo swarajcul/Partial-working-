@@ -1,3 +1,5 @@
+#!/bin/bash
+
 echo "🚀 Setting up Esports Platform..."
 
 # Create .env.local if it doesn't exist
