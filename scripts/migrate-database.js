@@ -52,22 +52,22 @@ function runMigrations() {
             // Initialize database schema
             yield (0, aws_database_1.initializeDatabase)();
             // Insert default teams
-            yield aws_database_1.db.query(`
-      INSERT INTO teams (name, description) 
-      VALUES 
-        ('Rebellion', 'Main competitive team'),
-        ('Academy', 'Training and development team')
-      ON CONFLICT (name) DO NOTHING
-    `);
+            // await db.query(`
+            //   INSERT INTO teams (name, description)
+            //   VALUES
+            //     ('Rebellion', 'Main competitive team'),
+            //     ('Academy', 'Training and development team')
+            //   ON CONFLICT (name) DO NOTHING
+            // `);
             // Insert default admin user (you'll need to create this in Cognito first)
             // IMPORTANT: Replace 'admin-cognito-id' with the actual Sub ID from your Cognito user
-            yield aws_database_1.db.query(`
-      INSERT INTO users (cognito_id, email, name, role) 
-      VALUES 
-        ('admin-cognito-id', 'admin@esports.com', 'Admin User', 'admin')
-      ON CONFLICT (cognito_id) DO NOTHING
-    `);
-            console.log("✅ Database migrations completed successfully!");
+            // await db.query(`
+            //   INSERT INTO users (cognito_id, email, name, role)
+            //   VALUES
+            //     ('admin-cognito-id', 'admin@esports.com', 'Admin User', 'admin')
+            //   ON CONFLICT (cognito_id) DO NOTHING
+            // `);
+            console.log("✅ Database schema initialized. Default data insertion has been skipped.");
             // Test database connection
             const healthCheck = yield aws_database_1.db.healthCheck();
             if (healthCheck) {

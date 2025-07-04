@@ -11,24 +11,24 @@ async function runMigrations() {
     await initializeDatabase()
 
     // Insert default teams
-    await db.query(`
-      INSERT INTO teams (name, description) 
-      VALUES 
-        ('Rebellion', 'Main competitive team'),
-        ('Academy', 'Training and development team')
-      ON CONFLICT (name) DO NOTHING
-    `)
+    // await db.query(`
+    //   INSERT INTO teams (name, description)
+    //   VALUES
+    //     ('Rebellion', 'Main competitive team'),
+    //     ('Academy', 'Training and development team')
+    //   ON CONFLICT (name) DO NOTHING
+    // `)
 
     // Insert default admin user (you'll need to create this in Cognito first)
     // IMPORTANT: Replace 'admin-cognito-id' with the actual Sub ID from your Cognito user
-    await db.query(`
-      INSERT INTO users (cognito_id, email, name, role) 
-      VALUES 
-        ('admin-cognito-id', 'admin@esports.com', 'Admin User', 'admin')
-      ON CONFLICT (cognito_id) DO NOTHING
-    `)
+    // await db.query(`
+    //   INSERT INTO users (cognito_id, email, name, role)
+    //   VALUES
+    //     ('admin-cognito-id', 'admin@esports.com', 'Admin User', 'admin')
+    //   ON CONFLICT (cognito_id) DO NOTHING
+    // `)
 
-    console.log("✅ Database migrations completed successfully!")
+    console.log("✅ Database schema initialized. Default data insertion has been skipped.")
 
     // Test database connection
     const healthCheck = await db.healthCheck()
