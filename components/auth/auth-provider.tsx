@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase-client"
 import { useRouter } from "next/navigation"
+import { addLog } from "@/lib/log-service" // Import addLog
 
 // Extend the AuthContextType to include permissions
 type AuthContextType = {
@@ -30,34 +31,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Fetch session on load
   useEffect(() => {
-    console.log("[AuthProvider] Initializing session effect");
+    addLog("[AuthProvider] Initializing session effect");
     const getSession = async () => {
-      console.log("[AuthProvider] getSession: Fetching session...");
+      addLog("[AuthProvider] getSession: Fetching session...");
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      console.log("[AuthProvider] getSession: Fetched session:", session);
+      addLog("[AuthProvider] getSession: Fetched session:", session);
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-      console.log("[AuthProvider] getSession: User set to:", currentUser);
+      addLog("[AuthProvider] getSession: User set to:", currentUser);
       setLoading(false);
-      console.log("[AuthProvider] getSession: Loading set to false.");
+      addLog("[AuthProvider] getSession: Loading set to false.");
     }
 
     getSession();
 
     // Listen for auth changes
-    console.log("[AuthProvider] Setting up onAuthStateChange listener");
+    addLog("[AuthProvider] Setting up onAuthStateChange listener");
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log("[AuthProvider] onAuthStateChange: Event triggered:", _event);
-      console.log("[AuthProvider] onAuthStateChange: New session:", session);
+      addLog("[AuthProvider] onAuthStateChange: Event triggered:", _event);
+      addLog("[AuthProvider] onAuthStateChange: New session:", session);
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-      console.log("[AuthProvider] onAuthStateChange: User set to:", currentUser);
+      addLog("[AuthProvider] onAuthStateChange: User set to:", currentUser);
       setLoading(false);
-      console.log("[AuthProvider] onAuthStateChange: Loading set to false.");
+      addLog("[AuthProvider] onAuthStateChange: Loading set to false.");
     })
 
     return () => {
@@ -67,32 +68,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Fetch user profile once logged in
   useEffect(() => {
-    console.log(`[AuthProvider] Profile effect triggered. User: ${user ? user.id : 'null'}, Profile: ${profile ? JSON.stringify(profile) : 'null'}`);
+    addLog(`[AuthProvider] Profile effect triggered. User: ${user ? user.id : 'null'}, Profile: ${profile ? JSON.stringify(profile) : 'null'}`);
     if (user && !profile) { // Only fetch if user exists and profile is not yet set (or is null)
-      console.log(`[AuthProvider] User ${user.id} exists and no profile loaded yet. Fetching profile.`);
+      addLog(`[AuthProvider] User ${user.id} exists and no profile loaded yet. Fetching profile.`);
       const fetchProfile = async () => {
-        console.log(`[AuthProvider] fetchProfile: Fetching for user ID: ${user.id}`);
+        addLog(`[AuthProvider] fetchProfile: Fetching for user ID: ${user.id}`);
         const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
         if (error) {
-          console.error("[AuthProvider] fetchProfile: Error fetching profile:", error);
+          addLog("[AuthProvider] fetchProfile: Error fetching profile:", error);
           setProfile(null);
-          console.log("[AuthProvider] fetchProfile: Profile set to null due to error.");
+          addLog("[AuthProvider] fetchProfile: Profile set to null due to error.");
         } else if (!data) {
-          console.log(`[AuthProvider] fetchProfile: No profile data found for user ${user.id}.`);
+          addLog(`[AuthProvider] fetchProfile: No profile data found for user ${user.id}.`);
           setProfile({ status: 'NO_PROFILE' });
-          console.log("[AuthProvider] fetchProfile: Profile set to { status: 'NO_PROFILE' }.");
+          addLog("[AuthProvider] fetchProfile: Profile set to { status: 'NO_PROFILE' }.");
         } else {
-          console.log("[AuthProvider] fetchProfile: Profile data found:", data);
+          addLog("[AuthProvider] fetchProfile: Profile data found:", data);
           setProfile(data);
-          console.log("[AuthProvider] fetchProfile: Profile set with fetched data.");
+          addLog("[AuthProvider] fetchProfile: Profile set with fetched data.");
         }
       }
       fetchProfile();
     } else if (user && profile) {
-      console.log(`[AuthProvider] Profile effect: User ${user.id} exists and profile is already loaded.`);
+      addLog(`[AuthProvider] Profile effect: User ${user.id} exists and profile is already loaded.`);
     } else if (!user) {
-      console.log("[AuthProvider] Profile effect: No user, ensuring profile is null.");
+      addLog("[AuthProvider] Profile effect: No user, ensuring profile is null.");
       setProfile(null);
     }
   }, [user?.id]); // Dependency on user?.id

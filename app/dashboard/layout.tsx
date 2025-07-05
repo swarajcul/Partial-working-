@@ -5,6 +5,7 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar"
+import { addLog } from "@/lib/log-service" // Import addLog
 
 export default function DashboardLayout({
   children,
@@ -14,7 +15,7 @@ export default function DashboardLayout({
   const { user, loading, profile } = useAuth()
   const router = useRouter()
 
-  console.log("[DashboardLayout] Rendering. Loading:", loading, "User:", user ? user.id : 'null', "Profile:", profile ? JSON.stringify(profile) : 'null');
+  addLog("[DashboardLayout] Rendering. Loading:", loading, "User:", user ? user.id : 'null', "Profile:", profile ? JSON.stringify(profile) : 'null');
 
   useEffect(() => {
     if (!loading && !user) {
