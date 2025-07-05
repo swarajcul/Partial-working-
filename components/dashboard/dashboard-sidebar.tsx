@@ -15,6 +15,7 @@ import {
 import { useAuth } from "@/components/auth/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { type UserRole } from "@/lib/role-config" // Import UserRole
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ThemeToggle } from "@/components/theme/theme-toggle"
 import {
@@ -55,10 +56,24 @@ const menuItemIcons = {
 }
 
 export function DashboardSidebar() {
-  const { user, logout } = useAuth()
+  const { user, profile, signOut } = useAuth() // Use profile and signOut
   const pathname = usePathname()
 
-  const visibleMenuItems = getVisibleMenuItems(user?.role as any)
+  // Use profile.role if available and valid, otherwise fallback to user.role (which might be 'authenticated')
+  // The getVisibleMenuItems function has its own fallback for undefined/invalid roles.
+  const appRole = profile?.role as UserRole | undefined;
+  const authRole = user?.role as UserRole | undefined; // Supabase role, e.g., 'authenticated'
+
+  // Prefer appRole from profile if it exists and is a valid UserRole string
+  // The `getVisibleMenuItems` will handle if the passed role is undefined or not in its map.
+  const roleForMenu = appRole || authRole;
+  const visibleMenuItems = getVisibleMenuItems(roleForMenu)
+
+  // For display, prioritize profile.role, then user.user_metadata.full_name or profile.full_name
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email;
+  const displayRole = profile?.role || user?.role;
+  const displayAvatar = profile?.avatar_url || user?.user_metadata?.avatar_url || "/placeholder.svg?height=24&width=24";
+
 
   return (
     <Sidebar className="border-r bg-background">
@@ -141,14 +156,14 @@ export function DashboardSidebar() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="w-full justify-start text-foreground hover:bg-accent">
               <Avatar className="w-6 h-6 mr-2">
-                <AvatarImage src={user?.avatar_url || "/placeholder.svg?height=24&width=24"} />
+                <AvatarImage src={displayAvatar} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                  {user?.name?.slice(0, 2).toUpperCase()}
+                  {displayName?.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 text-left">
-                <div className="text-sm font-medium">{user?.name}</div>
-                <div className="text-xs text-muted-foreground capitalize">{user?.role}</div>
+                <div className="text-sm font-medium">{displayName}</div>
+                <div className="text-xs text-muted-foreground capitalize">{displayRole}</div>
               </div>
               <ChevronUp className="w-4 h-4" />
             </Button>
@@ -157,7 +172,7 @@ export function DashboardSidebar() {
             <DropdownMenuItem asChild className="cursor-pointer">
               <Link href="/dashboard/profile">Profile Settings</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={logout} className="text-destructive cursor-pointer">
+            <DropdownMenuItem onClick={signOut} className="text-destructive cursor-pointer">
               <LogOut className="w-4 h-4 mr-2" />
               Sign Out
             </DropdownMenuItem>

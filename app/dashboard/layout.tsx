@@ -5,6 +5,8 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar"
+import { SidebarProvider } from "@/components/ui/sidebar" // Import SidebarProvider
+import { addLog } from "@/lib/log-service" // Import addLog
 
 export default function DashboardLayout({
   children,
@@ -14,7 +16,7 @@ export default function DashboardLayout({
   const { user, loading, profile } = useAuth()
   const router = useRouter()
 
-  console.log("[DashboardLayout] Rendering. Loading:", loading, "User:", user ? user.id : 'null', "Profile:", profile ? JSON.stringify(profile) : 'null');
+  addLog("[DashboardLayout] Rendering. Loading:", loading, "User:", user ? user.id : 'null', "Profile:", profile ? JSON.stringify(profile) : 'null');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -51,9 +53,11 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-      <DashboardSidebar />
-      <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">{children}</main>
-    </div>
+    <SidebarProvider>
+      <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+        <DashboardSidebar />
+        <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">{children}</main>
+      </div>
+    </SidebarProvider>
   )
 }
