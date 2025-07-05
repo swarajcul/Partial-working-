@@ -53,9 +53,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       addLog("[AuthProvider] onAuthStateChange: Event triggered:", _event);
       addLog("[AuthProvider] onAuthStateChange: New session:", session);
-      setSession(session);
+
       const currentUser = session?.user ?? null;
-      setUser(currentUser);
+
+      // If the user has changed, or if logging in (and profile isn't already loaded for this new user state),
+      // or if logging out, reset profile to ensure it's re-fetched or cleared.
+      // The `profile` check for SIGNED_IN helps if onAuthStateChange fires multiple times rapidly for SIGNED_IN
+      // and profile fetch has already started for the new user.
+      if (user?.id !== currentUser?.id || (_event === 'SIGNED_IN' && (!profile || profile.id !== currentUser?.id)) || _event === 'SIGNED_OUT') {
+        addLog("[AuthProvider] onAuthStateChange: User changed or specific auth event occurred, resetting profile to null.");
+        setProfile(null);
+      }
+
+      setSession(session);
+      setUser(currentUser); // This will trigger the profile useEffect if currentUser is not null and profile became null
       addLog("[AuthProvider] onAuthStateChange: User set to:", currentUser);
       setLoading(false);
       addLog("[AuthProvider] onAuthStateChange: Loading set to false.");
