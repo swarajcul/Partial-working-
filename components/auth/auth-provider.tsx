@@ -1,26 +1,37 @@
 "use client"
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode, useRef } from "react"
 import type { Session, User } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase-client"
 import { useRouter } from "next/navigation"
 import { addLog } from "@/lib/log-service"
+import { type UserRole, type RolePermissions, rolePermissions } from "@/lib/role-config" // Import RolePermissions and rolePermissions
 
-// Extend the AuthContextType to include permissions
+// Updated AuthContextType
 type AuthContextType = {
   session: Session | null
   user: User | null
-  profile: any | null // This can be actual profile or { status: 'NO_PROFILE' }
-  loading: boolean // True while session is being loaded
+  profile: any | null
+  loading: boolean
   signOut: () => Promise<void>
-  permissions: {
-    canViewProfile: boolean
-    canEditProfile: boolean
-    isAdmin: boolean
-  }
+  permissions: RolePermissions // Use the comprehensive RolePermissions type
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+// Helper to create a default (all false) permissions object
+const getDefaultPermissions = (): RolePermissions => {
+  const permissions: Partial<RolePermissions> = {};
+  // Assuming 'player' role exists and can be used to get all permission keys
+  const sampleRoleKey = (Object.keys(rolePermissions)[0] as UserRole | undefined) || 'player';
+  if (rolePermissions[sampleRoleKey]) {
+    for (const key in rolePermissions[sampleRoleKey]) {
+      (permissions as any)[key] = false;
+    }
+  }
+  return permissions as RolePermissions;
+};
+
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -28,54 +39,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const previousUserIdRef = useRef<string | undefined | null>(null);
 
-  // Effect for session handling (runs once on mount)
   useEffect(() => {
     addLog("[AuthProvider] Session effect: Initializing (mount).");
     let isMounted = true;
 
-    const getInitialSession = async () => {
-      addLog("[AuthProvider] getInitialSession: Fetching current session...");
-      const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
       if (!isMounted) return;
-
-      if (sessionError) {
-        addLog("[AuthProvider] getInitialSession: Error fetching session:", sessionError.message);
-      }
-      addLog("[AuthProvider] getInitialSession: Fetched session:", initialSession ? initialSession.user.id : 'null');
-      setSession(initialSession);
+      addLog("[AuthProvider] Initial session fetched:", initialSession ? initialSession.user.id : 'null');
       const initialSupabaseUser = initialSession?.user ?? null;
+
+      setSession(initialSession);
       setUser(initialSupabaseUser);
-      addLog("[AuthProvider] getInitialSession: User initially set to:", initialSupabaseUser?.id || 'null');
+      setLoading(false);
+      addLog("[AuthProvider] Initial session/user set. Loading false.", "Initial User:", initialSupabaseUser?.id);
 
       if (!initialSupabaseUser) {
         setProfile(null);
-        addLog("[AuthProvider] getInitialSession: No initial user, profile state set to null.");
+        addLog("[AuthProvider] Initial session: No initial user, profile state set to null.");
       }
-      setLoading(false);
-      addLog("[AuthProvider] getInitialSession: Initial auth loading complete.");
-    };
-
-    getInitialSession();
+      previousUserIdRef.current = initialSupabaseUser?.id;
+    });
 
     const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (!isMounted) return;
       addLog("[AuthProvider] onAuthStateChange: Event:", event, "New session user ID:", newSession?.user?.id || 'null');
 
       const newSupabaseUser = newSession?.user ?? null;
-      const previousUserId = user?.id; // Read previous user state captured by this closure
 
       setSession(newSession);
-      setUser(newSupabaseUser); // This state update is crucial
+      setUser(newSupabaseUser);
       setLoading(false);
-      addLog("[AuthProvider] onAuthStateChange: User state updated to:", newSupabaseUser?.id || 'null', ". Loading set to: false.");
+      addLog("[AuthProvider] onAuthStateChange: User updated to:", newSupabaseUser?.id || 'null', ". Loading set to false.");
 
-      // If the user ID has changed (e.g. from null to an ID, from one ID to another, or from an ID to null)
-      // then reset the profile state to null to ensure the profile useEffect refetches.
-      if (previousUserId !== newSupabaseUser?.id) {
-        addLog(`[AuthProvider] onAuthStateChange: User ID changed (from ${previousUserId || 'null'} to ${newSupabaseUser?.id || 'null'}). Resetting profile to null.`);
+      if (previousUserIdRef.current !== newSupabaseUser?.id) {
+        addLog(`[AuthProvider] onAuthStateChange: User ID changed (from ${previousUserIdRef.current || 'null'} to ${newSupabaseUser?.id || 'null'}). Resetting profile to null.`);
         setProfile(null);
       }
+      previousUserIdRef.current = newSupabaseUser?.id;
     });
 
     return () => {
@@ -83,10 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       addLog("[AuthProvider] Unmounting: Unsubscribing auth listener.");
       authSubscription?.unsubscribe();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // This effect should run only once to set up listeners and initial state. `user` inside onAuthStateChange is from closure.
+  }, []);
 
-  // Effect for profile fetching
   useEffect(() => {
     const userId = user?.id;
     const profileIsNull = profile === null;
@@ -122,27 +122,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         addLog(`[AuthProvider] Profile effect: Cleanup for user ID ${userId}. Setting isActive to false.`);
         isActive = false;
       };
-    } else if (!userId && profile !== null) { // User logged out, clear profile
+    } else if (!userId && profile !== null) {
         addLog(`[AuthProvider] Profile effect: No user. Clearing profile.`);
         setProfile(null);
     }
-  }, [user?.id, profile]); // Re-run if user.id changes, or if profile changes (e.g. from an object back to null)
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, profile === null]); // Re-run if user.id changes OR if profile becomes null
 
   const permissions = useMemo(() => {
     addLog("[AuthProvider] Computing permissions. Profile:", profile);
-    if (!profile || (typeof profile === 'object' && profile.status === 'NO_PROFILE')) {
-      return {
-        canViewProfile: false,
-        canEditProfile: false,
-        isAdmin: false,
-      };
+    if (!profile || typeof profile !== 'object' || profile.status === 'NO_PROFILE' || !profile.role) {
+      addLog("[AuthProvider] Profile not ready or no role, returning default (all false) permissions.");
+      return getDefaultPermissions();
     }
-    return {
-      canViewProfile: !!profile,
-      canEditProfile: profile?.role === "admin" || profile?.role === "manager",
-      isAdmin: profile?.role === "admin",
-    };
+
+    const userAppRole = profile.role as UserRole;
+    if (rolePermissions[userAppRole]) {
+      addLog("[AuthProvider] Profile role found:", userAppRole, ". Applying permissions from role-config.");
+      return rolePermissions[userAppRole];
+    } else {
+      addLog("[AuthProvider] Unknown role in profile:", userAppRole, ". Returning default (all false) permissions.");
+      return getDefaultPermissions();
+    }
   }, [profile]);
 
   const value: AuthContextType = {
@@ -152,11 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     signOut: async () => {
       addLog("[AuthProvider] signOut called.");
-      // setProfile(null); // Let onAuthStateChange handle profile reset on SIGNED_OUT
-      // setUser(null);     // Let onAuthStateChange handle user reset
-      // setSession(null);  // Let onAuthStateChange handle session reset
       await supabase.auth.signOut();
-      // router.push("/auth/login"); // Let pages redirect based on auth state
     },
     permissions,
   };
